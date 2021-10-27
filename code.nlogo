@@ -10,12 +10,14 @@ to setup-cows
     setxy random-xcor random-ycor
     set color white
     set hungry-counter 5
+    set size 2
     set energy initial-white-cow-energy
   ]
   create-cows2 initial-black-cows [
     setxy random-xcor random-ycor
-    set color red
+    set color black
     set hungry-counter 5
+    set size 2
     set energy initial-black-cow-energy
   ]
 
@@ -24,8 +26,8 @@ end
 to setup-wolves
   create-wolves initial-wolves [
     setxy random-xcor random-ycor
-    set color brown
-    set size 1.5
+    set color blue
+    set size 2.5
     set energy initial-wolf-energy
   ]
 end
@@ -39,6 +41,9 @@ to setup-patches
    set grass-amount random-float 10.0
    color-grass
   ]
+end
+to-report grass
+    report patches with [pcolor = green]
 end
 
 to setup
@@ -194,7 +199,7 @@ initial-white-cows
 initial-white-cows
 0
 100
-20.0
+50.0
 1
 1
 NIL
@@ -209,7 +214,7 @@ initial-black-cows
 initial-black-cows
 0
 100
-20.0
+50.0
 1
 1
 NIL
@@ -224,7 +229,7 @@ initial-wolves
 initial-wolves
 0
 60
-20.0
+4.0
 1
 1
 NIL
@@ -381,6 +386,60 @@ cost-of-reproduction
 1
 NIL
 HORIZONTAL
+
+PLOT
+752
+245
+952
+395
+Population Check
+time
+Population
+0.0
+100.0
+0.0
+100.0
+true
+true
+"" ""
+PENS
+"White Cow" 1.0 0 -2674135 true "" "plot count cows1"
+"Wolf" 1.0 0 -13791810 true "" "plot count wolves"
+"Grass/4" 1.0 0 -13840069 true "" "plot count grass"
+"Black Cow" 1.0 0 -16777216 true "" "plot count cows2"
+
+MONITOR
+729
+118
+855
+167
+White Cow Count
+count cows1
+11
+1
+12
+
+MONITOR
+906
+118
+1025
+167
+Black Cow Count
+count cows2
+11
+1
+12
+
+MONITOR
+1084
+120
+1185
+169
+Wolves Count
+count wolves
+11
+1
+12
 
 @#$#@#$#@
 ## WHAT IS IT?
