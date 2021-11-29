@@ -1,7 +1,9 @@
-breed [cows1 cow ]
-breed [cows2 sheep]
+breed [cows1 cow1 ]
+breed [cows2 cow2]
 breed [wolves wolf ]
-turtles-own [ energy hungry-counter]
+turtles-own [ energy hungry-counter runspeed]
+cows1-own [dosage]
+cows2-own [dosage]
 patches-own [ grass-amount ]
 
 
@@ -9,14 +11,16 @@ to setup-cows
   create-cows1 initial-white-cows [
     setxy random-xcor random-ycor
     set color white
-    set hungry-counter 5
+    set hungry-counter 5.0
+    set dosage 3
     set size 2
     set energy initial-white-cow-energy
   ]
   create-cows2 initial-black-cows [
     setxy random-xcor random-ycor
     set color black
-    set hungry-counter 5
+    set hungry-counter 5.0
+    set dosage 2
     set size 2
     set energy initial-black-cow-energy
   ]
@@ -27,13 +31,14 @@ to setup-wolves
   create-wolves initial-wolves [
     setxy random-xcor random-ycor
     set color blue
+    set hungry-counter 10
     set size 2.5
     set energy initial-wolf-energy
   ]
 end
 
 to color-grass
-  set pcolor scale-color green grass-amount -10 20
+  set pcolor scale-color green grass-amount -20 30
 end
 
 to setup-patches
@@ -42,9 +47,12 @@ to setup-patches
    color-grass
   ]
 end
+
+;; -----------------------------------------------
 to-report grass
     report patches with [pcolor = green]
 end
+;; -----------------------------------------------
 
 to setup
   clear-all
@@ -67,10 +75,11 @@ end
 
 to go-white-cows
   ask cows1[
+    show energy
     set hungry-counter hungry-counter - 1
     move
     eat-grass
-    reproduce initial-white-cow-energy
+    reproduce-cows initial-white-cow-energy
     check-death
   ]
 end
@@ -80,13 +89,14 @@ to go-black-cows
     set hungry-counter hungry-counter - 1
     move
     eat-grass
-    reproduce initial-black-cow-energy
+    reproduce-cows initial-black-cow-energy
     check-death
   ]
 end
 
 to go-wolves
   ask wolves[
+    set hungry-counter hungry-counter - 1
     move
     eat-cows
     reproduce initial-wolf-energy
@@ -97,35 +107,42 @@ end
 
 to move
     rt random 180
-    fd 1
+    fd random 3
+    rt random 360
+    fd random 3
     set energy energy - energy-loss-from-moving
 end
 
 to eat-cows
-  if any? cows1-here [
-    let target one-of cows1-here
-    ask target [ die ]
-    set energy energy + energy-gain-from-cow1
-  ]
-  if any? cows2-here [
-    let target one-of cows2-here
-    ask target [ die ]
-    set energy energy + energy-gain-from-cow2
-  ]
+  ;; target, chase and flee code here
 end
 
 to eat-grass
-    if grass-amount >= energy-from-grass and hungry-counter = 0
+  show [grass-amount] of patch-here
+  if hungry-counter < 5
     [
-      set grass-amount grass-amount - energy-from-grass
-      set energy energy + energy-from-grass
+
+      ifelse grass-amount < dosage
+      [
+        let v grass-amount * energy-from-grass
+        let choms grass-amount / dosage * 5
+        set energy energy + v
+        set hungry-counter hungry-counter + choms
+        set grass-amount  0
+      ]
+      [
+        let v dosage
+        set grass-amount grass-amount - v
+        set energy energy + energy-from-grass * v
+        set hungry-counter 5.0
+      ]
       color-grass
-    set hungry-counter 5
     ]
 end
 
+
 to reproduce [initial-energy]
-    if energy > cost-of-reproduction
+  if energy > cost-of-reproduction
     [
      set energy energy - cost-of-reproduction
       hatch 1 [
@@ -135,14 +152,35 @@ to reproduce [initial-energy]
 end
 
 
+to reproduce-cows [initial-energy]
+  let mate turtles in-radius 2 with [breed = cows1 or breed = cows2]
+  let v max-one-of mate [energy]
+  if [energy] of v > cost-of-reproduction and initial-energy > cost-of-reproduction
+  [
+    ifelse [breed] of v != [breed] of self
+    ;; here characteristic allotment would be there
+    [
+      if random 100 < RII
+      [hatch 1 [set energy initial-white-cow-energy]]
+    ]
+    [
+      hatch 1 [set energy initial-white-cow-energy]
+    ]
+  ]
+end
+
+
 to check-death
    if energy <= 0
-   [ die ]
+   [
+    die
+   ]
 end
 
 to regrow-grass
   ask patches with [grass-amount < 10][
-    set grass-amount grass-amount + grass-regrowth-rate
+    let v grass-amount + grass-regrowth-rate
+    set grass-amount min (list 10 v )
   ]
 end
 @#$#@#$#@
@@ -199,7 +237,7 @@ initial-white-cows
 initial-white-cows
 0
 100
-52.0
+1.0
 1
 1
 NIL
@@ -214,7 +252,7 @@ initial-black-cows
 initial-black-cows
 0
 100
-50.0
+0.0
 1
 1
 NIL
@@ -229,7 +267,7 @@ initial-wolves
 initial-wolves
 0
 60
-4.0
+0.0
 1
 1
 NIL
@@ -261,7 +299,7 @@ energy-gain-from-cow1
 energy-gain-from-cow1
 0
 10
-4.0
+5.0
 1
 1
 NIL
@@ -276,7 +314,7 @@ energy-gain-from-cow2
 energy-gain-from-cow2
 0
 10
-2.0
+3.0
 1
 1
 NIL
@@ -290,9 +328,9 @@ SLIDER
 energy-from-grass
 energy-from-grass
 0
-10
-3.0
 1
+0.0
+0.01
 1
 NIL
 HORIZONTAL
@@ -306,7 +344,7 @@ grass-regrowth-rate
 grass-regrowth-rate
 0
 10
-5.0
+0.0
 1
 1
 NIL
@@ -365,9 +403,9 @@ SLIDER
 energy-loss-from-moving
 energy-loss-from-moving
 0
-10
-2.0
-1
+5
+1.2
+0.1
 1
 NIL
 HORIZONTAL
@@ -381,7 +419,7 @@ cost-of-reproduction
 cost-of-reproduction
 0
 10
-2.0
+4.0
 1
 1
 NIL
@@ -440,6 +478,21 @@ count wolves
 11
 1
 12
+
+SLIDER
+10
+509
+187
+542
+RII
+RII
+0
+100
+50.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
