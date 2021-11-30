@@ -1,28 +1,33 @@
-breed [cows1 cow1 ]
+breed [cows1 cow1]
 breed [cows2 cow2]
-breed [wolves wolf ]
-turtles-own [ energy hungry-counter runspeed]
+breed [wolves wolf]
+turtles-own [energy runspeed vision repcost]
 cows1-own [dosage]
 cows2-own [dosage]
-patches-own [ grass-amount ]
+patches-own [grass-amount regrowth-rate]
 
+globals [dom_run dom_vis dom_rep l_run l_vis l_rep]
 
 to setup-cows
-  create-cows1 initial-white-cows [
+  create-cows1 initial-cow1
+  [
     setxy random-xcor random-ycor
     set color white
-    set hungry-counter 5.0
-    set dosage 3
+    set runspeed cow1-speed
+    set dosage cow1-dosage
+    set vision cow1-vision
     set size 2
-    set energy initial-white-cow-energy
+    set energy 5
   ]
-  create-cows2 initial-black-cows [
+  create-cows2 initial-cow2
+  [
     setxy random-xcor random-ycor
     set color black
-    set hungry-counter 5.0
-    set dosage 2
+    set runspeed cow1-speed
+    set dosage cow2-dosage
+    set vision cow2-vision
     set size 2
-    set energy initial-black-cow-energy
+    set energy 5
   ]
 
 end
@@ -30,22 +35,44 @@ end
 to setup-wolves
   create-wolves initial-wolves [
     setxy random-xcor random-ycor
-    set color blue
-    set hungry-counter 10
+    set color yellow
     set size 2.5
-    set energy initial-wolf-energy
+    set energy 5
+    set vision wolf-vision
   ]
 end
 
 to color-grass
   set pcolor scale-color green grass-amount -20 30
+  if grass-amount < 2
+  [set pcolor brown]
 end
 
 to setup-patches
   ask patches [
    set grass-amount random-float 10.0
+   set regrowth-rate random-float 10.0
    color-grass
   ]
+end
+
+to setup-var
+  set dom_run random 2
+  set dom_vis random 2
+  set dom_rep random 2
+  if dom_run + dom_vis + dom_rep = 0
+  [set dom_run 1]
+  if dom_run + dom_vis + dom_rep = 3
+  [set dom_run 0]
+  show dom_run
+  show dom_vis
+  show dom_rep
+end
+
+to setup-list
+  set l_vis list cow1-vision cow2-vision
+  set l_run list cow1-speed cow2-speed
+  set l_rep list cow1-repcost cow2-repcost
 end
 
 ;; -----------------------------------------------
@@ -62,6 +89,8 @@ to setup
   setup-cows
   setup-wolves
   setup-patches
+  setup-var
+  setup-list
   reset-ticks
 end
 
@@ -75,97 +104,266 @@ end
 
 to go-white-cows
   ask cows1[
-    show energy
-    set hungry-counter hungry-counter - 1
     move
     eat-grass
-    reproduce-cows initial-white-cow-energy
+    flee-from-predator
+    reproduce-cows
     check-death
   ]
 end
 
 to go-black-cows
   ask cows2[
-    set hungry-counter hungry-counter - 1
     move
     eat-grass
-    reproduce-cows initial-black-cow-energy
+    flee-from-predator
+    reproduce-cows
     check-death
   ]
 end
 
 to go-wolves
   ask wolves[
-    set hungry-counter hungry-counter - 1
     move
     eat-cows
-    reproduce initial-wolf-energy
+    reproduce
     check-death
   ]
 end
 
-
 to move
-    rt random 180
-    fd random 3
     rt random 360
     fd random 3
     set energy energy - energy-loss-from-moving
 end
 
 to eat-cows
-  ;; target, chase and flee code here
+  ifelse count my-links = 0
+  [
+    ifelse any? turtles with [breed != wolves] in-radius 1
+    [
+      let str one-of turtles with [breed != wolves] in-radius 1
+      ifelse [breed] of str = cows1
+      [set energy energy + energy-gain-from-cow1][set energy energy + energy-gain-from-cow2]
+      ask str [die]
+    ]
+    [
+      let target one-of turtles in-radius vision with [breed != wolves and count my-links = 0]
+      if target != nobody
+      [
+        create-link-with target
+      ]
+    ]
+  ]
+  [
+    let target one-of link-neighbors
+    if target != nobody
+    [
+      face target
+      ifelse distance target > vision
+      [
+        ask my-links with [(end1 = self and end2 = target) or (end2 = self and end1 = target)]
+        [die]
+      ]
+      [
+        fd 2
+        let mypatch patch-here
+        if [patch-here] of target = mypatch
+        [
+          ifelse [breed] of target = cows1
+          [set energy energy + energy-gain-from-cow1][set energy energy + energy-gain-from-cow2]
+          ask target [die]
+        ]
+      ]
+    ]
+  ]
+end
+
+
+to flee-from-predator
+  if any? wolves in-radius vision
+  [
+    let yamraj one-of wolves in-radius vision
+    face yamraj
+    rt 90
+    fd runspeed * (1 - (grass-amount / 10))
+  ]
+  if count my-links != 0
+  [
+    let predator one-of link-neighbors
+    if distance predator <= vision
+    [
+      face predator
+      rt 180
+      fd runspeed * (1 - (grass-amount / 10))
+    ]
+  ]
 end
 
 to eat-grass
-  show [grass-amount] of patch-here
-  if hungry-counter < 5
+  if energy < repcost
     [
-
-      ifelse grass-amount < dosage
+      ifelse grass-amount <= dosage
       [
-        let v grass-amount * energy-from-grass
-        let choms grass-amount / dosage * 5
+        let v energy-from-grass * (grass-amount / dosage)
         set energy energy + v
-        set hungry-counter hungry-counter + choms
         set grass-amount  0
       ]
       [
-        let v dosage
-        set grass-amount grass-amount - v
-        set energy energy + energy-from-grass * v
-        set hungry-counter 5.0
+        set grass-amount grass-amount - dosage
+        set energy energy + energy-from-grass
       ]
       color-grass
     ]
 end
 
 
-to reproduce [initial-energy]
-  if energy > cost-of-reproduction
+to reproduce
+  let mate one-of wolves in-radius 1 with [energy > wolf-repcost]
+  if energy > wolf-repcost and mate != nobody
     [
-     set energy energy - cost-of-reproduction
-      hatch 1 [
-        set energy initial-energy
+     set energy energy - wolf-repcost
+     ask mate [set energy energy - wolf-repcost]
+     hatch 1
+      [
+        set energy 5
       ]
     ]
 end
 
 
-to reproduce-cows [initial-energy]
-  let mate turtles in-radius 2 with [breed = cows1 or breed = cows2]
+to reproduce-cows
+  let mate turtles in-radius 1 with [breed = cows1 or breed = cows2]
   let v max-one-of mate [energy]
-  if [energy] of v > cost-of-reproduction and initial-energy > cost-of-reproduction
+  let e1 -1
+  let e2 -1
+  ifelse [breed] of self = cows1
   [
+    set e1 cow1-repcost
+  ]
+  [
+    set e1 cow2-repcost
+  ]
+  ifelse [breed] of v = cows1
+  [
+    set e2 cow1-repcost
+  ]
+  [
+    set e2 cow2-repcost
+  ]
+  if energy > e1 and [energy] of v > e2
+  [
+    set energy energy - e1
+    ask v [set energy energy - e2]
+    let c1 0
+    let c2 0
+    let vis item dom_vis l_vis
+    let rep item dom_rep l_rep
+    let runsp item dom_run l_run
+    let vi 0
+    let repi 0
+    let runi 0
+
+    if [vision] of v = vis
+    [
+      set c2 c2 + 1
+    ]
+    if [vision] of self = vis
+    [
+      set c1 c1 + 1
+    ]
+    if [vision] of v != vis and [vision] of self != vis
+    [
+      set vi 1
+    ]
+
+    if [runspeed] of v = runsp
+    [
+      set c2 c2 + 1
+    ]
+    if [runspeed] of self = runsp
+    [
+      set c1 c1 + 1
+    ]
+    if [runspeed] of v != runsp and [runspeed] of self != runsp
+    [
+      set runi 1
+    ]
+
+    if [repcost] of v = rep
+    [
+      set c2 c2 + 1
+    ]
+    if [repcost] of self = rep
+    [
+      set c1 c1 + 1
+    ]
+    if [repcost] of v != rep and [repcost] of self != rep
+    [
+      set repi 1
+    ]
+
     ifelse [breed] of v != [breed] of self
     ;; here characteristic allotment would be there
     [
       if random 100 < RII
-      [hatch 1 [set energy initial-white-cow-energy]]
+      [
+        ifelse c1 > c2
+        [
+          hatch 1
+          [
+            set energy 5
+            ifelse vi = 1
+            [set vision item (1 - dom_vis) l_vis][set vision item dom_vis l_vis]
+            ifelse repi = 1
+            [set repcost item (1 - dom_rep) l_rep][set repcost item dom_rep l_rep]
+            ifelse runi = 1
+            [set runspeed item (1 - dom_run) l_run][set runspeed item dom_run l_run]
+          ]
+        ]
+        [
+          ifelse [breed] of v = cows1
+          [
+            hatch-cows1 1
+            [
+              set energy 5
+              ifelse vi = 1
+              [set vision item (1 - dom_vis) l_vis][set vision item dom_vis l_vis]
+              ifelse repi = 1
+              [set repcost item (1 - dom_rep) l_rep][set repcost item dom_rep l_rep]
+              ifelse runi = 1
+              [set runspeed item (1 - dom_run) l_run][set runspeed item dom_run l_run]
+            ]
+          ]
+          [
+            hatch-cows2 1
+            [
+              set energy 5
+              ifelse vi = 1
+              [set vision item (1 - dom_vis) l_vis][set vision item dom_vis l_vis]
+              ifelse repi = 1
+              [set repcost item (1 - dom_rep) l_rep][set repcost item dom_rep l_rep]
+              ifelse runi = 1
+              [set runspeed item (1 - dom_run) l_run][set runspeed item dom_run l_run]
+            ]
+          ]
+        ]
+      ]
     ]
+    ;; if breeds are same
     [
-      hatch 1 [set energy initial-white-cow-energy]
+      hatch 1
+      [
+        set energy 5
+        ifelse vi = 1
+        [set vision item (1 - dom_vis) l_vis][set vision item dom_vis l_vis]
+        ifelse repi = 1
+        [set repcost item (1 - dom_rep) l_rep][set repcost item dom_rep l_rep]
+        ifelse runi = 1
+        [set runspeed item (1 - dom_run) l_run][set runspeed item dom_run l_run]
+      ]
     ]
+
   ]
 end
 
@@ -178,20 +376,21 @@ to check-death
 end
 
 to regrow-grass
-  ask patches with [grass-amount < 10][
-    let v grass-amount + grass-regrowth-rate
+  ask patches with [grass-amount < 10]
+  [
+    let v grass-amount + regrowth-rate
     set grass-amount min (list 10 v )
   ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
 10
-1011
-552
+10
+695
+563
 -1
 -1
-13.0
+13.275
 1
 10
 1
@@ -201,21 +400,21 @@ GRAPHICS-WINDOW
 0
 0
 1
--30
-30
+-25
+25
 -20
 20
-0
-0
+1
+1
 1
 ticks
 30.0
 
 BUTTON
-1113
-527
-1176
-560
+824
+339
+887
+372
 NIL
 setup
 NIL
@@ -229,55 +428,55 @@ NIL
 1
 
 SLIDER
-14
-10
-186
-43
-initial-white-cows
-initial-white-cows
+710
+47
+882
+80
+initial-cow1
+initial-cow1
 0
 100
-1.0
+50.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-14
-51
-186
-84
-initial-black-cows
-initial-black-cows
+901
+47
+1073
+80
+initial-cow2
+initial-cow2
 0
 100
-0.0
+40.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-13
-93
-186
-126
+1096
+45
+1269
+78
 initial-wolves
 initial-wolves
 0
 60
-0.0
+30.0
 1
 1
 NIL
 HORIZONTAL
 
 BUTTON
-1188
-527
-1251
-560
+899
+339
+962
+372
 NIL
 go
 T
@@ -291,25 +490,25 @@ NIL
 1
 
 SLIDER
-12
-134
-186
-167
+709
+94
+883
+127
 energy-gain-from-cow1
 energy-gain-from-cow1
 0
 10
-5.0
+2.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-12
-174
-185
-207
+901
+96
+1074
+129
 energy-gain-from-cow2
 energy-gain-from-cow2
 0
@@ -321,115 +520,85 @@ NIL
 HORIZONTAL
 
 SLIDER
-11
-214
-185
-247
+1296
+43
+1470
+76
 energy-from-grass
 energy-from-grass
 0
-1
-0.0
-0.01
-1
-NIL
-HORIZONTAL
-
-SLIDER
-11
-254
-185
-287
-grass-regrowth-rate
-grass-regrowth-rate
-0
-10
-0.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-11
-296
-185
-329
-initial-black-cow-energy
-initial-black-cow-energy
-0
-10
-5.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-11
-338
-186
-371
-initial-white-cow-energy
-initial-white-cow-energy
-0
-10
-5.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-10
-422
-186
-455
-initial-wolf-energy
-initial-wolf-energy
-0
-10
-5.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-11
-380
-186
-413
-energy-loss-from-moving
-energy-loss-from-moving
-0
-5
-1.2
+3
+0.8
 0.1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-10
-465
-186
-498
-cost-of-reproduction
-cost-of-reproduction
+900
+144
+1074
+177
+cow2-repcost
+cow2-repcost
 0
 10
-4.0
+7.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+709
+144
+884
+177
+cow1-repcost
+cow1-repcost
+0
+10
+8.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+1296
+93
+1471
+126
+energy-loss-from-moving
+energy-loss-from-moving
+0
+1
+0.5
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+1095
+145
+1271
+178
+wolf-repcost
+wolf-repcost
+0
+10
+8.0
 1
 1
 NIL
 HORIZONTAL
 
 PLOT
-1114
-258
-1494
-503
+1095
+193
+1473
+417
 Population Check
 time
 Population
@@ -446,49 +615,161 @@ PENS
 "Grass/4" 1.0 0 -13840069 true "" "plot count grass"
 "Black Cow" 1.0 0 -16777216 true "" "plot count cows2"
 
-MONITOR
-1114
-40
-1240
-89
-White Cow Count
-count cows1
-11
-1
-12
-
-MONITOR
-1114
-183
-1240
-232
-Black Cow Count
-count cows2
-11
-1
-12
-
-MONITOR
-1114
-113
-1240
-162
-Wolves Count
-count wolves
-11
-1
-12
-
 SLIDER
-10
-509
-187
-542
+1296
+146
+1473
+179
 RII
 RII
 0
 100
 50.0
+1
+1
+NIL
+HORIZONTAL
+
+TEXTBOX
+731
+24
+881
+42
+Cow subspecies 1 controls
+11
+0.0
+1
+
+TEXTBOX
+921
+24
+1071
+42
+Cow supspecies 2 controls
+11
+0.0
+1
+
+TEXTBOX
+1144
+24
+1294
+42
+Wolf controls
+11
+0.0
+1
+
+SLIDER
+709
+192
+884
+225
+cow1-dosage
+cow1-dosage
+0
+5
+2.0
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+900
+192
+1075
+225
+cow2-dosage
+cow2-dosage
+0
+5
+2.5
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+709
+237
+884
+270
+cow1-speed
+cow1-speed
+0.5
+10
+2.0
+0.25
+1
+NIL
+HORIZONTAL
+
+SLIDER
+900
+237
+1075
+270
+cow2-speed
+cow2-speed
+0.5
+10
+2.5
+0.25
+1
+NIL
+HORIZONTAL
+
+SLIDER
+708
+281
+884
+314
+cow1-vision
+cow1-vision
+0
+10
+5.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+900
+281
+1075
+314
+cow2-vision
+cow2-vision
+0
+10
+7.0
+1
+1
+NIL
+HORIZONTAL
+
+TEXTBOX
+1334
+23
+1484
+41
+Global-variables
+11
+0.0
+1
+
+SLIDER
+1095
+97
+1272
+130
+wolf-vision
+wolf-vision
+0
+10
+5.0
 1
 1
 NIL
