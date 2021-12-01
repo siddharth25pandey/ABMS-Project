@@ -16,6 +16,7 @@ to setup-cows
     set runspeed cow1-speed
     set dosage cow1-dosage
     set vision cow1-vision
+    set repcost cow1-repcost
     set size 2
     set energy 5
   ]
@@ -26,6 +27,7 @@ to setup-cows
     set runspeed cow1-speed
     set dosage cow2-dosage
     set vision cow2-vision
+    set repcost cow2-repcost
     set size 2
     set energy 5
   ]
@@ -37,6 +39,7 @@ to setup-wolves
     setxy random-xcor random-ycor
     set color yellow
     set size 2.5
+    set repcost wolf-repcost
     set energy 5
     set vision wolf-vision
   ]
@@ -51,7 +54,7 @@ end
 to setup-patches
   ask patches [
    set grass-amount random-float 10.0
-   set regrowth-rate random-float 10.0
+   set regrowth-rate random-float 3
    color-grass
   ]
 end
@@ -105,9 +108,13 @@ end
 to go-white-cows
   ask cows1[
     move
+    ;;print "moved"
     eat-grass
+    ;;print "eaten"
     flee-from-predator
+    ;;print "fleed"
     reproduce-cows
+    print "reproduced"
     check-death
   ]
 end
@@ -140,7 +147,8 @@ end
 to eat-cows
   ifelse count my-links = 0
   [
-    ifelse any? turtles with [breed != wolves] in-radius 1
+    let myen energy
+    ifelse any? turtles with [breed != wolves and energy < myen] in-radius 1
     [
       let str one-of turtles with [breed != wolves] in-radius 1
       ifelse [breed] of str = cows1
@@ -148,7 +156,7 @@ to eat-cows
       ask str [die]
     ]
     [
-      let target one-of turtles in-radius vision with [breed != wolves and count my-links = 0]
+      let target one-of turtles in-radius vision with [breed != wolves and (count my-links = 0 and energy < myen)]
       if target != nobody
       [
         create-link-with target
@@ -201,29 +209,32 @@ to flee-from-predator
 end
 
 to eat-grass
-  if energy < repcost
-    [
       ifelse grass-amount <= dosage
       [
+        ;;print "Eating less"
         let v energy-from-grass * (grass-amount / dosage)
         set energy energy + v
+        ;;show energy
         set grass-amount  0
       ]
       [
+        ;;print "Eating ok"
         set grass-amount grass-amount - dosage
         set energy energy + energy-from-grass
+        ;;show energy
       ]
       color-grass
-    ]
+
 end
 
 
 to reproduce
-  let mate one-of wolves in-radius 1 with [energy > wolf-repcost]
+  let mate one-of wolves in-radius 5 with [energy > wolf-repcost]
   if energy > wolf-repcost and mate != nobody
     [
-     set energy energy - wolf-repcost
-     ask mate [set energy energy - wolf-repcost]
+     create-link-with mate
+     set energy energy - repcost
+     ask mate [set energy energy - repcost]
      hatch 1
       [
         set energy 5
@@ -233,28 +244,15 @@ end
 
 
 to reproduce-cows
-  let mate turtles in-radius 1 with [breed = cows1 or breed = cows2]
+  let mate turtles in-radius 5 with [breed = cows1 or breed = cows2]
   let v max-one-of mate [energy]
   let e1 -1
   let e2 -1
-  ifelse [breed] of self = cows1
+
+  if energy > repcost and [energy] of v > [repcost] of v
   [
-    set e1 cow1-repcost
-  ]
-  [
-    set e1 cow2-repcost
-  ]
-  ifelse [breed] of v = cows1
-  [
-    set e2 cow1-repcost
-  ]
-  [
-    set e2 cow2-repcost
-  ]
-  if energy > e1 and [energy] of v > e2
-  [
-    set energy energy - e1
-    ask v [set energy energy - e2]
+    set energy (energy - repcost)
+    ask v [set energy (energy - repcost)]
     let c1 0
     let c2 0
     let vis item dom_vis l_vis
@@ -306,7 +304,7 @@ to reproduce-cows
     ifelse [breed] of v != [breed] of self
     ;; here characteristic allotment would be there
     [
-      if random 100 < RII
+      if random 100 > RII
       [
         ifelse c1 > c2
         [
@@ -371,6 +369,7 @@ end
 to check-death
    if energy <= 0
    [
+    print "died"
     die
    ]
 end
@@ -397,15 +396,15 @@ GRAPHICS-WINDOW
 1
 1
 0
-0
-0
+1
+1
 1
 -25
 25
 -20
 20
-1
-1
+0
+0
 1
 ticks
 30.0
@@ -436,7 +435,7 @@ initial-cow1
 initial-cow1
 0
 100
-50.0
+100.0
 1
 1
 NIL
@@ -451,7 +450,7 @@ initial-cow2
 initial-cow2
 0
 100
-40.0
+100.0
 1
 1
 NIL
@@ -466,7 +465,7 @@ initial-wolves
 initial-wolves
 0
 60
-30.0
+0.0
 1
 1
 NIL
@@ -528,7 +527,7 @@ energy-from-grass
 energy-from-grass
 0
 3
-0.8
+1.5
 0.1
 1
 NIL
@@ -543,7 +542,7 @@ cow2-repcost
 cow2-repcost
 0
 10
-7.0
+6.0
 1
 1
 NIL
@@ -573,7 +572,7 @@ energy-loss-from-moving
 energy-loss-from-moving
 0
 1
-0.5
+0.2
 0.01
 1
 NIL
@@ -588,7 +587,7 @@ wolf-repcost
 wolf-repcost
 0
 10
-8.0
+6.0
 1
 1
 NIL
@@ -624,7 +623,7 @@ RII
 RII
 0
 100
-50.0
+0.0
 1
 1
 NIL
@@ -774,6 +773,39 @@ wolf-vision
 1
 NIL
 HORIZONTAL
+
+MONITOR
+1096
+430
+1178
+475
+NIL
+count cows1
+0
+1
+11
+
+MONITOR
+1194
+430
+1276
+475
+NIL
+count cows2
+0
+1
+11
+
+MONITOR
+1291
+430
+1377
+475
+NIL
+count wolves
+0
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
