@@ -6,13 +6,18 @@ cows1-own [dosage]
 cows2-own [dosage]
 patches-own [grass-amount regrowth-rate]
 
-globals [dom_run dom_vis dom_rep l_run l_vis l_rep]
+globals [dom_run dom_vis dom_rep l_run l_vis l_rep dayvar]
+
+to-report daytime?
+  let t int(ticks / 50)
+  report t mod 2 = 0
+end
 
 to setup-cows
   create-cows1 initial-cow1
   [
     setxy random-xcor random-ycor
-    set color white
+    set color brown
     set runspeed cow1-speed
     set dosage cow1-dosage
     set vision cow1-vision
@@ -40,19 +45,18 @@ to setup-wolves
     set color yellow
     set size 2.5
     set repcost wolf-repcost
-    set energy 5
+    set runspeed 2
+    set energy 10
     set vision wolf-vision
   ]
 end
 
 to color-grass
-  let tc ticks / 500
-  let rc remainder tc 2
-  ifelse rc = 0
+  ifelse daytime?
   [
   set pcolor scale-color green grass-amount -20 30
   if grass-amount < 2
-    [set pcolor brown]
+  [set pcolor brown]
   ]
   [
     set pcolor scale-color blue grass-amount -20 30
@@ -64,7 +68,7 @@ end
 to setup-patches
   ask patches [
    set grass-amount random-float 10.0
-   set regrowth-rate random-float 3
+   set regrowth-rate random-float 2
    color-grass
   ]
 end
@@ -77,9 +81,10 @@ to setup-var
   [set dom_run 1]
   if dom_run + dom_vis + dom_rep = 3
   [set dom_run 0]
-  show dom_run
-  show dom_vis
-  show dom_rep
+  set dayvar 0
+  ;;show dom_run
+  ;;show dom_vis
+  ;;show dom_rep
 end
 
 to setup-list
@@ -90,7 +95,9 @@ end
 
 ;; -----------------------------------------------
 to-report grass
-    report patches with [pcolor = green]
+  let val sum [grass-amount] of patches
+  set val val / count patches
+  report val
 end
 ;; -----------------------------------------------
 
@@ -105,15 +112,75 @@ to setup
   setup-patches
   setup-var
   setup-list
+end
 
+to drift
+  ask n-of random 20 cows1
+  [
+    set vision cow2-vision
+  ]
+  ask n-of random 20 cows2
+  [
+    set runspeed cow2-speed
+  ]
 end
 
 to go
   go-white-cows
   go-black-cows
   go-wolves
+  recolor-world
   regrow-grass
   tick
+end
+
+to recolor-world
+  ifelse daytime?
+  [
+    ask patches
+    [
+      set pcolor scale-color green grass-amount -20 30
+      if grass-amount < 4
+      [set pcolor brown]
+    ]
+    ask cows1
+    [
+      set vision cow1-vision
+      set runspeed cow1-speed
+    ]
+    ask cows2
+    [
+      set vision cow2-vision
+      set runspeed cow2-speed
+    ]
+    ask wolves
+    [
+      set vision wolf-vision
+      set runspeed 2
+    ]
+  ]
+  [
+    if dayvar = 0
+    [
+      set dayvar 1
+      ask turtles with [breed != wolves]
+      [
+        set vision vision - 2
+        set runspeed runspeed - 1
+      ]
+      ask wolves
+      [
+        set vision vision + 2
+        set runspeed runspeed + 1
+      ]
+    ]
+    ask patches
+    [
+      set pcolor scale-color blue grass-amount -20 30
+      if grass-amount < 2
+      [set pcolor black]
+    ]
+  ]
 end
 
 to go-white-cows
@@ -125,7 +192,7 @@ to go-white-cows
     flee-from-predator
     ;;print "fleed"
     reproduce-cows
-    print "reproduced"
+    ;;print "reproduced"
     check-death
   ]
 end
@@ -142,7 +209,7 @@ end
 
 to go-wolves
   ask wolves[
-    move
+    move-w
     eat-cows
     reproduce
     check-death
@@ -153,6 +220,12 @@ to move
     rt random 360
     fd random 3
     set energy energy - energy-loss-from-moving
+end
+
+to move-w
+    rt random 360
+    fd random 3
+    set energy energy - (energy-loss-from-moving / 2)
 end
 
 to eat-cows
@@ -167,10 +240,20 @@ to eat-cows
       ask str [die]
     ]
     [
-      let target one-of turtles in-radius vision with [breed != wolves and (count my-links = 0 and energy < myen)]
-      if target != nobody
+      ifelse daytime?
       [
-        create-link-with target
+        let target one-of turtles in-radius vision with [breed != wolves and (pcolor != brown or color != brown) and (count my-links = 0 and energy < myen)]
+        if target != nobody
+        [
+          create-link-with target
+        ]
+      ]
+      [
+        let target one-of turtles in-radius vision with [breed != wolves and (pcolor != black or color != black ) and (count my-links = 0 and energy < myen)]
+        if target != nobody
+        [
+          create-link-with target
+        ]
       ]
     ]
   ]
@@ -185,7 +268,7 @@ to eat-cows
         [die]
       ]
       [
-        fd 2
+        fd runspeed
         let mypatch patch-here
         if [patch-here] of target = mypatch
         [
@@ -243,12 +326,11 @@ to reproduce
   let mate one-of other wolves in-radius 5 with [energy > wolf-repcost]
   if energy > wolf-repcost and mate != nobody
     [
-     create-link-with mate
      set energy energy - repcost
      ask mate [set energy energy - repcost]
      hatch 1
       [
-        set energy 5
+        set energy 10
       ]
     ]
 end
@@ -328,6 +410,9 @@ to reproduce-cows
             [set repcost item (1 - dom_rep) l_rep][set repcost item dom_rep l_rep]
             ifelse runi = 1
             [set runspeed item (1 - dom_run) l_run][set runspeed item dom_run l_run]
+            ifelse random 2 = 1
+            [set color brown]
+            [set color black]
           ]
         ]
         [
@@ -342,6 +427,9 @@ to reproduce-cows
               [set repcost item (1 - dom_rep) l_rep][set repcost item dom_rep l_rep]
               ifelse runi = 1
               [set runspeed item (1 - dom_run) l_run][set runspeed item dom_run l_run]
+              ifelse random 2 = 1
+              [set color brown]
+              [set color black]
             ]
           ]
           [
@@ -354,6 +442,9 @@ to reproduce-cows
               [set repcost item (1 - dom_rep) l_rep][set repcost item dom_rep l_rep]
               ifelse runi = 1
               [set runspeed item (1 - dom_run) l_run][set runspeed item dom_run l_run]
+              ifelse random 2 = 1
+              [set color brown]
+              [set color black]
             ]
           ]
         ]
@@ -380,7 +471,7 @@ end
 to check-death
    if energy <= 0
    [
-    print "died"
+    ;;print "died"
     die
    ]
 end
@@ -446,7 +537,7 @@ initial-cow1
 initial-cow1
 0
 100
-50.0
+100.0
 1
 1
 NIL
@@ -461,7 +552,7 @@ initial-cow2
 initial-cow2
 0
 100
-50.0
+100.0
 1
 1
 NIL
@@ -475,8 +566,8 @@ SLIDER
 initial-wolves
 initial-wolves
 0
-60
-10.0
+100
+50.0
 1
 1
 NIL
@@ -508,7 +599,7 @@ energy-gain-from-cow1
 energy-gain-from-cow1
 0
 10
-2.0
+8.0
 1
 1
 NIL
@@ -523,7 +614,7 @@ energy-gain-from-cow2
 energy-gain-from-cow2
 0
 10
-3.0
+7.0
 1
 1
 NIL
@@ -553,7 +644,7 @@ cow2-repcost
 cow2-repcost
 0
 10
-6.0
+4.0
 1
 1
 NIL
@@ -568,7 +659,7 @@ cow1-repcost
 cow1-repcost
 0
 10
-8.0
+4.0
 1
 1
 NIL
@@ -598,7 +689,7 @@ wolf-repcost
 wolf-repcost
 0
 10
-6.0
+9.0
 1
 1
 NIL
@@ -620,10 +711,10 @@ true
 true
 "" ""
 PENS
-"White Cow" 1.0 0 -2674135 true "" "plot count cows1"
+"Brown Cow" 1.0 0 -2674135 true "" "plot count turtles with [color = brown]"
 "Wolf" 1.0 0 -13791810 true "" "plot count wolves"
-"Grass/4" 1.0 0 -13840069 true "" "plot count grass"
-"Black Cow" 1.0 0 -16777216 true "" "plot count cows2"
+"Grass" 1.0 0 -13840069 true "" "plot grass"
+"Black Cow" 1.0 0 -16777216 true "" "plot count turtles with [color = black]"
 
 SLIDER
 1296
@@ -678,9 +769,9 @@ SLIDER
 cow1-dosage
 cow1-dosage
 0
-5
-2.0
-0.1
+10
+10.0
+0.2
 1
 NIL
 HORIZONTAL
@@ -693,9 +784,9 @@ SLIDER
 cow2-dosage
 cow2-dosage
 0
-5
-2.5
-0.1
+10
+10.0
+0.2
 1
 NIL
 HORIZONTAL
@@ -779,7 +870,7 @@ wolf-vision
 wolf-vision
 0
 10
-5.0
+6.0
 1
 1
 NIL
@@ -790,8 +881,8 @@ MONITOR
 430
 1178
 475
-NIL
-count cows1
+cows1
+count turtles with [color = brown]
 0
 1
 11
@@ -801,8 +892,8 @@ MONITOR
 430
 1276
 475
-NIL
-count cows2
+cows2
+count turtles with [color = black]
 0
 1
 11
@@ -817,6 +908,51 @@ count wolves
 0
 1
 11
+
+MONITOR
+1393
+430
+1456
+475
+NIL
+daytime?
+17
+1
+11
+
+BUTTON
+735
+339
+815
+372
+Mutation
+setup-var
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+BUTTON
+974
+339
+1037
+372
+NIL
+drift
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
