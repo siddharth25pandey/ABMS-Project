@@ -46,9 +46,19 @@ to setup-wolves
 end
 
 to color-grass
+  let tc ticks / 500
+  let rc remainder tc 2
+  ifelse rc = 0
+  [
   set pcolor scale-color green grass-amount -20 30
   if grass-amount < 2
-  [set pcolor brown]
+    [set pcolor brown]
+  ]
+  [
+    set pcolor scale-color blue grass-amount -20 30
+    if grass-amount < 2
+    [set pcolor black]
+  ]
 end
 
 to setup-patches
@@ -86,6 +96,7 @@ end
 
 to setup
   clear-all
+  reset-ticks
   set-default-shape cows1 "cow"
   set-default-shape cows2 "cow"
   set-default-shape wolves "wolf"
@@ -94,7 +105,7 @@ to setup
   setup-patches
   setup-var
   setup-list
-  reset-ticks
+
 end
 
 to go
@@ -229,7 +240,7 @@ end
 
 
 to reproduce
-  let mate one-of wolves in-radius 5 with [energy > wolf-repcost]
+  let mate one-of other wolves in-radius 5 with [energy > wolf-repcost]
   if energy > wolf-repcost and mate != nobody
     [
      create-link-with mate
@@ -403,8 +414,8 @@ GRAPHICS-WINDOW
 25
 -20
 20
-0
-0
+1
+1
 1
 ticks
 30.0
@@ -435,7 +446,7 @@ initial-cow1
 initial-cow1
 0
 100
-100.0
+50.0
 1
 1
 NIL
@@ -450,7 +461,7 @@ initial-cow2
 initial-cow2
 0
 100
-100.0
+50.0
 1
 1
 NIL
@@ -465,7 +476,7 @@ initial-wolves
 initial-wolves
 0
 60
-0.0
+10.0
 1
 1
 NIL
@@ -623,7 +634,7 @@ RII
 RII
 0
 100
-0.0
+2.0
 1
 1
 NIL
