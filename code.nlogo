@@ -17,7 +17,7 @@ to setup-cows
   create-cows1 initial-cow1
   [
     setxy random-xcor random-ycor
-    set color brown
+    set color white
     set runspeed cow1-speed
     set dosage cow1-dosage
     set vision cow1-vision
@@ -43,7 +43,7 @@ to setup-wolves
   create-wolves initial-wolves [
     setxy random-xcor random-ycor
     set color yellow
-    set size 2.5
+    set size 2
     set repcost wolf-repcost
     set runspeed 2
     set energy 10
@@ -106,7 +106,7 @@ to setup
   reset-ticks
   set-default-shape cows1 "cow"
   set-default-shape cows2 "cow"
-  set-default-shape wolves "wolf"
+  set-default-shape wolves "ghost"
   setup-cows
   setup-wolves
   setup-patches
@@ -599,7 +599,7 @@ energy-gain-from-cow1
 energy-gain-from-cow1
 0
 10
-8.0
+9.0
 1
 1
 NIL
@@ -614,7 +614,7 @@ energy-gain-from-cow2
 energy-gain-from-cow2
 0
 10
-7.0
+8.0
 1
 1
 NIL
@@ -674,7 +674,7 @@ energy-loss-from-moving
 energy-loss-from-moving
 0
 1
-0.2
+0.5
 0.01
 1
 NIL
@@ -689,7 +689,7 @@ wolf-repcost
 wolf-repcost
 0
 10
-9.0
+8.0
 1
 1
 NIL
@@ -725,7 +725,7 @@ RII
 RII
 0
 100
-2.0
+100.0
 1
 1
 NIL
@@ -770,7 +770,7 @@ cow1-dosage
 cow1-dosage
 0
 10
-10.0
+5.0
 0.2
 1
 NIL
@@ -785,7 +785,7 @@ cow2-dosage
 cow2-dosage
 0
 10
-10.0
+6.2
 0.2
 1
 NIL
@@ -800,7 +800,7 @@ cow1-speed
 cow1-speed
 0.5
 10
-2.0
+1.5
 0.25
 1
 NIL
@@ -815,7 +815,7 @@ cow2-speed
 cow2-speed
 0.5
 10
-2.5
+2.0
 0.25
 1
 NIL
@@ -870,7 +870,7 @@ wolf-vision
 wolf-vision
 0
 10
-6.0
+7.0
 1
 1
 NIL
@@ -955,6 +955,24 @@ NIL
 1
 
 @#$#@#$#@
+# OOD
+
+## Purpose
+The model’s purpose is to study and observe the impact of reproductive isolation in the population dynamics of an isolated ecoystem. Specifically, it aims to answer how the species of the crossbreed offspring would be decided on the amount of genes inherited from the particular parent species
+
+## Entities, state variables, and scales
+Model entities are the square spatial units or habitat cells comprising the landscape, black and white cows with territories. Also an exteranl dynamic agent to make control over the cows population.
+
+## Process overview and scheduling
+
+## Design concepts
+
+## Initialization
+
+## Input data
+
+## Submodels
+
 ## WHAT IS IT?
 
 (a general understanding of what the model is trying to show or explain)
@@ -1065,6 +1083,16 @@ Polygon -7500403 true true 200 193 197 249 179 249 177 196 166 187 140 189 93 19
 Polygon -7500403 true true 73 210 86 251 62 249 48 208
 Polygon -7500403 true true 25 114 16 195 9 204 23 213 25 200 39 123
 
+cow skull
+false
+0
+Polygon -7500403 true true 150 90 75 105 60 150 75 210 105 285 195 285 225 210 240 150 225 105
+Polygon -16777216 true false 150 150 90 195 90 150
+Polygon -16777216 true false 150 150 210 195 210 150
+Polygon -16777216 true false 105 285 135 270 150 285 165 270 195 285
+Polygon -7500403 true true 240 150 263 143 278 126 287 102 287 79 280 53 273 38 261 25 246 15 227 8 241 26 253 46 258 68 257 96 246 116 229 126
+Polygon -7500403 true true 60 150 37 143 22 126 13 102 13 79 20 53 27 38 39 25 54 15 73 8 59 26 47 46 42 68 43 96 54 116 71 126
+
 cylinder
 false
 0
@@ -1133,6 +1161,15 @@ Circle -16777216 true false 113 68 74
 Polygon -10899396 true false 189 233 219 188 249 173 279 188 234 218
 Polygon -10899396 true false 180 255 150 210 105 210 75 240 135 240
 
+ghost
+false
+0
+Polygon -7500403 true true 30 165 13 164 -2 149 0 135 -2 119 0 105 15 75 30 75 58 104 43 119 43 134 58 134 73 134 88 104 73 44 78 14 103 -1 193 -1 223 29 208 89 208 119 238 134 253 119 240 105 238 89 240 75 255 60 270 60 283 74 300 90 298 104 298 119 300 135 285 135 285 150 268 164 238 179 208 164 208 194 238 209 253 224 268 239 268 269 238 299 178 299 148 284 103 269 58 284 43 299 58 269 103 254 148 254 193 254 163 239 118 209 88 179 73 179 58 164
+Line -16777216 false 189 253 215 253
+Circle -16777216 true false 102 30 30
+Polygon -16777216 true false 165 105 135 105 120 120 105 105 135 75 165 75 195 105 180 120
+Circle -16777216 true false 160 30 30
+
 house
 false
 0
@@ -1156,6 +1193,16 @@ line half
 true
 0
 Line -7500403 true 150 0 150 150
+
+moose
+false
+0
+Polygon -7500403 true true 196 228 198 297 180 297 178 244 166 213 136 213 106 213 79 227 73 259 50 257 49 229 38 197 26 168 26 137 46 120 101 122 147 102 181 111 217 121 256 136 294 151 286 169 256 169 241 198 211 188
+Polygon -7500403 true true 74 258 87 299 63 297 49 256
+Polygon -7500403 true true 25 135 15 186 10 200 23 217 25 188 35 141
+Polygon -7500403 true true 270 150 253 100 231 94 213 100 208 135
+Polygon -7500403 true true 225 120 204 66 207 29 185 56 178 27 171 59 150 45 165 90
+Polygon -7500403 true true 225 120 249 61 241 31 265 56 272 27 280 59 300 45 285 90
 
 pentagon
 false
@@ -1182,6 +1229,24 @@ Polygon -7500403 true true 165 180 165 210 225 180 255 120 210 135
 Polygon -7500403 true true 135 105 90 60 45 45 75 105 135 135
 Polygon -7500403 true true 165 105 165 135 225 105 255 45 210 60
 Polygon -7500403 true true 135 90 120 45 150 15 180 45 165 90
+
+rabbit
+false
+0
+Polygon -7500403 true true 61 150 76 180 91 195 103 214 91 240 76 255 61 270 76 270 106 255 132 209 151 210 181 210 211 240 196 255 181 255 166 247 151 255 166 270 211 270 241 255 240 210 270 225 285 165 256 135 226 105 166 90 91 105
+Polygon -7500403 true true 75 164 94 104 70 82 45 89 19 104 4 149 19 164 37 162 59 153
+Polygon -7500403 true true 64 98 96 87 138 26 130 15 97 36 54 86
+Polygon -7500403 true true 49 89 57 47 78 4 89 20 70 88
+Circle -16777216 true false 37 103 16
+Line -16777216 false 44 150 104 150
+Line -16777216 false 39 158 84 175
+Line -16777216 false 29 159 57 195
+Polygon -5825686 true false 0 150 15 165 15 150
+Polygon -5825686 true false 76 90 97 47 130 32
+Line -16777216 false 180 210 165 180
+Line -16777216 false 165 180 180 165
+Line -16777216 false 180 165 225 165
+Line -16777216 false 180 210 210 240
 
 sheep
 false
@@ -1289,6 +1354,18 @@ false
 Polygon -16777216 true false 253 133 245 131 245 133
 Polygon -7500403 true true 2 194 13 197 30 191 38 193 38 205 20 226 20 257 27 265 38 266 40 260 31 253 31 230 60 206 68 198 75 209 66 228 65 243 82 261 84 268 100 267 103 261 77 239 79 231 100 207 98 196 119 201 143 202 160 195 166 210 172 213 173 238 167 251 160 248 154 265 169 264 178 247 186 240 198 260 200 271 217 271 219 262 207 258 195 230 192 198 210 184 227 164 242 144 259 145 284 151 277 141 293 140 299 134 297 127 273 119 270 105
 Polygon -7500403 true true -1 195 14 180 36 166 40 153 53 140 82 131 134 133 159 126 188 115 227 108 236 102 238 98 268 86 269 92 281 87 269 103 269 113
+
+wolf 6
+false
+0
+Polygon -7500403 true true 105 75 105 45 45 0 30 45 45 60 60 90
+Polygon -7500403 true true 45 165 30 135 45 120 15 105 60 75 105 60 180 60 240 75 285 105 255 120 270 135 255 165 270 180 255 195 255 210 240 195 195 225 210 255 180 300 120 300 90 255 105 225 60 195 45 210 45 195 30 180
+Polygon -16777216 true false 120 300 135 285 120 270 120 255 180 255 180 270 165 285 180 300
+Polygon -7500403 true true 195 75 195 45 255 0 270 45 255 60 240 90
+Polygon -16777216 true false 225 75 210 60 210 45 255 15 255 45 225 60
+Polygon -16777216 true false 75 75 90 60 90 45 45 15 45 45 75 60
+Circle -16777216 true false 88 118 32
+Circle -16777216 true false 178 118 32
 
 x
 false
