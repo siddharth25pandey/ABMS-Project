@@ -8,6 +8,7 @@ patches-own [grass-amount regrowth-rate]
 
 globals [dom_run dom_vis dom_rep l_run l_vis l_rep dayvar]
 
+
 to-report daytime?
   let t int(ticks / 50)
   report t mod 2 = 0
@@ -540,7 +541,7 @@ initial-rabbit1
 initial-rabbit1
 0
 100
-33.0
+100.0
 1
 1
 NIL
@@ -555,7 +556,7 @@ initial-rabbit2
 initial-rabbit2
 0
 100
-52.0
+100.0
 1
 1
 NIL
@@ -602,7 +603,7 @@ energy-gain-from-rabbit1
 energy-gain-from-rabbit1
 0
 10
-9.0
+8.0
 1
 1
 NIL
@@ -617,7 +618,7 @@ energy-gain-from-rabbit2
 energy-gain-from-rabbit2
 0
 10
-8.0
+7.0
 1
 1
 NIL
@@ -632,7 +633,7 @@ energy-from-grass
 energy-from-grass
 0
 3
-0.5
+1.5
 0.1
 1
 NIL
@@ -647,7 +648,7 @@ rabbit2-repcost
 rabbit2-repcost
 0
 10
-3.0
+4.0
 1
 1
 NIL
@@ -677,7 +678,7 @@ energy-loss-from-moving
 energy-loss-from-moving
 0
 1
-1.0
+0.2
 0.01
 1
 NIL
@@ -692,7 +693,7 @@ wolf-repcost
 wolf-repcost
 0
 10
-8.0
+9.0
 1
 1
 NIL
@@ -773,7 +774,7 @@ rabbit1-dosage
 rabbit1-dosage
 0
 10
-5.0
+10.0
 0.2
 1
 NIL
@@ -788,7 +789,7 @@ rabbit2-dosage
 rabbit2-dosage
 0
 10
-6.2
+10.0
 0.2
 1
 NIL
@@ -803,7 +804,7 @@ rabbit1-speed
 rabbit1-speed
 0.5
 10
-1.5
+2.0
 0.25
 1
 NIL
@@ -818,7 +819,7 @@ rabbit2-speed
 rabbit2-speed
 0.5
 10
-2.0
+2.5
 0.25
 1
 NIL
@@ -873,7 +874,7 @@ wolf-vision
 wolf-vision
 0
 10
-7.0
+6.0
 1
 1
 NIL
