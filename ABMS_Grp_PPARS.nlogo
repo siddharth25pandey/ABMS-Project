@@ -1165,7 +1165,7 @@ Else: (since grass is less than needed ,so the rabbit will eat less)
 
 Wolves have a vision range, and if they see a rabbit in that range, they start running towards them , in order to hunt them down.
 
-``eat-rabbits():
+```eat-rabbits():
 
 If(link=0) && (rabbits in radius vision) :
       -- link to rabbit with energy less than wolf energy
@@ -1202,6 +1202,7 @@ If(energy <= 0):
 end function
 ```
 ![Flow Chart](https://imgur.com/cgrOILE)
+![Flow Chart](https://drive.google.com/file/d/1ZpdzfNERJU2OtFSu1-1KPE5uLzXzcCLn/view)
 
 
 ## Design concepts
