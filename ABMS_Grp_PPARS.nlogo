@@ -1201,7 +1201,7 @@ If(energy <= 0):
     -- die
 end function
 ```
-![Flow Chart](https://drive.google.com/file/d/1ZpdzfNERJU2OtFSu1-1KPE5uLzXzcCLn/view)
+![Flow Chart](https://imgur.com/cgrOILE)
 
 
 ## Design concepts
