@@ -30,7 +30,7 @@ to setup-rabbits
   [
     setxy random-xcor random-ycor
     set color black
-    set runspeed rabbit1-speed
+    set runspeed rabbit2-speed
     set dosage rabbit2-dosage
     set vision rabbit2-vision
     set repcost rabbit2-repcost
@@ -116,13 +116,15 @@ to setup
 end
 
 to drift
-  ask n-of random 20 rabbits1
+  ask n-of random (count rabbits1) rabbits1
   [
     set vision rabbit2-vision
-  ]
-  ask n-of random 20 rabbits2
-  [
     set runspeed rabbit2-speed
+  ]
+  ask n-of random (count rabbits2) rabbits2
+  [
+    set runspeed rabbit1-speed
+    set vision rabbit1-vision
   ]
 end
 
@@ -148,16 +150,7 @@ to recolor-world
       if grass-amount < 4
       [set pcolor brown]
     ]
-    ask rabbits1
-    [
-      set vision rabbit1-vision
-      set runspeed rabbit1-speed
-    ]
-    ask rabbits2
-    [
-      set vision rabbit2-vision
-      set runspeed rabbit2-speed
-    ]
+
     ask wolves
     [
       set vision wolf-vision
@@ -168,11 +161,6 @@ to recolor-world
     if dayvar = 0
     [
       set dayvar 1
-      ask turtles with [breed != wolves]
-      [
-        set vision vision - 2
-        set runspeed runspeed - 1
-      ]
       ask wolves
       [
         set vision vision + 2
@@ -223,13 +211,13 @@ end
 
 to move
     rt random 360
-    fd random 3
+    fd random 4
     set energy energy - energy-loss-from-moving
 end
 
 to move-w
     rt random 360
-    fd random 3
+    fd random 2
     set energy energy - (energy-loss-from-moving / 2)
 end
 
@@ -487,6 +475,35 @@ to regrow-grass
     set grass-amount min (list 10 v )
   ]
 end
+
+;;---------------------------------------------------------------------------------------------------
+
+to-report rabbit1trait
+  let val1 count turtles with [breed != wolves and vision = rabbit1-vision]
+  let val2 count turtles with [breed = rabbits1 and repcost = rabbit1-repcost]
+  let val3 count turtles with [breed != wolves and runspeed = rabbit1-speed]
+  let val4 count rabbits1
+  let val 0
+  ifelse val4 = 0
+  [set val 0]
+  [set val ((val1 + val2 + val3) / (3 * val4))]
+  report val * 100
+end
+
+to-report rabbit2trait
+  let val1 count turtles with [breed != wolves and vision = rabbit2-vision]
+  let val2 count turtles with [breed = rabbits2 and repcost = rabbit2-repcost]
+  let val3 count turtles with [breed != wolves and runspeed = rabbit2-speed]
+  let val4 count rabbits2
+  let val 0
+  ifelse val4 = 0
+  [set val 0]
+  [set val ((val1 + val2 + val3) / (3 * val4))]
+  report val * 100
+end
+
+
+;;-----------------------------------------------------------------------------------------------------
 @#$#@#$#@
 GRAPHICS-WINDOW
 10
@@ -516,10 +533,10 @@ ticks
 30.0
 
 BUTTON
-824
-339
-887
-372
+1226
+239
+1289
+272
 NIL
 setup
 NIL
@@ -578,10 +595,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-899
-339
-962
-372
+1301
+239
+1364
+272
 NIL
 go
 T
@@ -603,7 +620,7 @@ energy-gain-from-rabbit1
 energy-gain-from-rabbit1
 0
 10
-8.0
+7.0
 1
 1
 NIL
@@ -618,7 +635,7 @@ energy-gain-from-rabbit2
 energy-gain-from-rabbit2
 0
 10
-7.0
+6.0
 1
 1
 NIL
@@ -633,7 +650,7 @@ energy-from-grass
 energy-from-grass
 0
 3
-1.5
+2.5
 0.1
 1
 NIL
@@ -678,7 +695,7 @@ energy-loss-from-moving
 energy-loss-from-moving
 0
 1
-0.2
+0.4
 0.01
 1
 NIL
@@ -693,17 +710,17 @@ wolf-repcost
 wolf-repcost
 0
 10
-9.0
+10.0
 1
 1
 NIL
 HORIZONTAL
 
 PLOT
-1095
-193
-1473
-417
+1097
+326
+1475
+550
 Population Check
 time
 Population
@@ -715,10 +732,10 @@ true
 true
 "" ""
 PENS
-"Brown Cow" 1.0 0 -2674135 true "" "plot count turtles with [color = brown]"
-"Wolf" 1.0 0 -13791810 true "" "plot count wolves"
-"Grass" 1.0 0 -13840069 true "" "plot grass"
-"Black Cow" 1.0 0 -16777216 true "" "plot count turtles with [color = black]"
+"Rabbit 1" 1.0 0 -10402772 true "" "plot count rabbits1"
+"Wolf" 1.0 0 -1184463 true "" "plot count wolves"
+"Grass" 1.0 0 -13840069 true "" "plot grass * 10"
+"Rabbit 2" 1.0 0 -16777216 true "" "plot count rabbits2"
 
 SLIDER
 1296
@@ -729,7 +746,7 @@ RII
 RII
 0
 100
-100.0
+0.0
 1
 1
 NIL
@@ -740,7 +757,7 @@ TEXTBOX
 24
 881
 42
-Cow subspecies 1 controls
+Rabbit subspecies 1 controls
 11
 0.0
 1
@@ -750,7 +767,7 @@ TEXTBOX
 24
 1071
 42
-Cow supspecies 2 controls
+Rabbit supspecies 2 controls
 11
 0.0
 1
@@ -789,7 +806,7 @@ rabbit2-dosage
 rabbit2-dosage
 0
 10
-10.0
+9.0
 0.2
 1
 NIL
@@ -874,39 +891,39 @@ wolf-vision
 wolf-vision
 0
 10
-6.0
+4.0
 1
 1
 NIL
 HORIZONTAL
 
 MONITOR
-1096
-430
-1178
-475
+1098
+563
+1180
+608
 rabbits1
-count turtles with [color = brown]
+count rabbits1
 0
 1
 11
 
 MONITOR
-1194
-430
-1276
-475
+1196
+563
+1278
+608
 rabbits2
-count turtles with [color = black]
+count rabbits2
 0
 1
 11
 
 MONITOR
-1291
-430
-1377
-475
+1293
+563
+1379
+608
 NIL
 count wolves
 0
@@ -914,10 +931,10 @@ count wolves
 11
 
 MONITOR
-1393
-430
-1456
-475
+1395
+563
+1458
+608
 NIL
 daytime?
 17
@@ -925,10 +942,10 @@ daytime?
 11
 
 BUTTON
-735
-339
-815
-372
+1137
+239
+1217
+272
 Mutation
 setup-var
 NIL
@@ -942,10 +959,10 @@ NIL
 1
 
 BUTTON
-974
-339
-1037
-372
+1376
+239
+1439
+272
 NIL
 drift
 NIL
@@ -957,6 +974,37 @@ NIL
 NIL
 NIL
 1
+
+PLOT
+706
+326
+1077
+549
+Trait preservation
+time
+percentage
+0.0
+100.0
+0.0
+100.0
+true
+true
+"" ""
+PENS
+"Rabbit 1 Traits" 1.0 0 -10899396 true "" "plot rabbit1trait"
+"Rabbit 2 Traits" 1.0 0 -13345367 true "" "plot rabbit2trait"
+"Total Eqlbm" 1.0 0 -16777216 true "" "plot (rabbit1trait + rabbit2trait) / 2"
+
+MONITOR
+797
+561
+1012
+606
+Survival Index
+(rabbit2trait + rabbit1trait) / 2
+17
+1
+11
 
 @#$#@#$#@
 # OOD
@@ -1153,6 +1201,8 @@ If(energy <= 0):
     -- die
 end function
 ```
+![Flow Chart](https://drive.google.com/file/d/1ZpdzfNERJU2OtFSu1-1KPE5uLzXzcCLn/view)
+
 
 ## Design concepts
 
@@ -1306,7 +1356,6 @@ Recessive + Recessive = Recessive
 * After this cross-breeding happens and the new one inherits the dominant traits of different species.
 
 * Based on the number of traits inherited from an individual parent, the breed of the offspring is decided.
-
 @#$#@#$#@
 default
 true
@@ -1754,6 +1803,69 @@ NetLogo 6.2.0
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="experiment" repetitions="3" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="120"/>
+    <metric>(rabbit1trait + rabbit2trait) / 2</metric>
+    <enumeratedValueSet variable="RII">
+      <value value="0"/>
+      <value value="100"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="wolf-vision">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="initial-rabbit2">
+      <value value="100"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="rabbit2-vision">
+      <value value="7"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="wolf-repcost">
+      <value value="10"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="energy-from-grass">
+      <value value="2.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="energy-gain-from-rabbit1">
+      <value value="7"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="energy-gain-from-rabbit2">
+      <value value="6"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="rabbit2-repcost">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="rabbit1-speed">
+      <value value="2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="rabbit1-dosage">
+      <value value="10"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="initial-wolves">
+      <value value="50"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="rabbit2-speed">
+      <value value="2.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="initial-rabbit1">
+      <value value="100"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="rabbit1-vision">
+      <value value="5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="rabbit1-repcost">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="rabbit2-dosage">
+      <value value="9"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="energy-loss-from-moving">
+      <value value="0.4"/>
+    </enumeratedValueSet>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
